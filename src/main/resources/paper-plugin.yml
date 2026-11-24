@@ -1,0 +1,17 @@
+name: CopperWorks
+version: '${version}'
+main: dev.copperworks.CopperWorksPlugin
+description: Профессии для медных големов — сортировщик, курьер и фермер.
+api-version: '26.3'
+folia-supported: false
+
+permissions:
+  copperworks.use:
+    description: Нанимать медных големов и управлять своими рабочими.
+    default: true
+  copperworks.unlimited:
+    description: Снимает лимит рабочих големов на игрока.
+    default: op
+  copperworks.admin:
+    description: Управлять чужими големами и перезагружать конфиг.
+    default: op

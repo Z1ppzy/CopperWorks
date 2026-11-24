@@ -1,0 +1,140 @@
+# Все тексты плагина. Формат — MiniMessage: https://docs.advntr.dev/minimessage/format.html
+# Плейсхолдеры в <угловых скобках> подставляет плагин.
+
+prefix: "<#d97a4a><bold>CopperWorks</bold></#d97a4a> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>Недостаточно прав."
+not-owner: "<red>Этот голем работает на <yellow><owner></yellow>."
+too-far: "<red>Голем слишком далеко."
+golem-gone: "<red>Голем больше недоступен."
+
+hire:
+  no-post: "<red>Поставь голема рядом с медным сундуком (не дальше <radius> бл.): это будет его рабочее место."
+  limit: "<red>У тебя уже максимум рабочих големов: <max>."
+  job-disabled: "<red>Эта профессия отключена на сервере."
+  already: "<red>У этого голема уже есть работа."
+  success: "<green>Голем нанят! Профессия: <yellow><job></yellow>."
+
+fire:
+  success: "<yellow>Голем уволен и снова свободен."
+  on-trip: "<red>Курьер в пути. Дождись, когда он вернётся."
+
+job-changed: "<green>Новая профессия: <yellow><job></yellow>."
+
+upgrade:
+  max: "<yellow>Это улучшение уже на максимуме."
+  not-enough: "<red>Нужно <cost> × <item>."
+  success: "<green>«<upgrade>» улучшено до уровня <level>."
+
+link:
+  start: "<aqua>Нажми ПКМ по сундуку, бочке или шалкеру: туда курьер будет возить вещи. <gray>(<seconds> сек.)"
+  not-container: "<red>Это не контейнер. Выбор отменён."
+  same-post: "<red>Это рабочий сундук самого курьера. Выбери другой контейнер."
+  no-access: "<red>У тебя нет доступа к этому контейнеру."
+  other-world: "<red>Точка доставки должна быть в том же мире."
+  too-far: "<red>Слишком далеко: <distance> бл. Сейчас максимум <max> бл., улучши дальность."
+  success: "<green>Точка доставки: <x> <y> <z> (<distance> бл.)."
+  expired: "<gray>Выбор точки доставки отменён."
+
+courier:
+  delivered: "<#d97a4a>Курьер доставил <amount> предм. в <x> <y> <z>."
+  partial: "<yellow>Курьер доставил <amount> предм., ещё <left> не влезло. Везёт обратно."
+  no-target: "<red>Курьер не нашёл контейнер в <x> <y> <z>. Везёт груз обратно."
+
+death: "<red>Твой голем (<job>) погиб на <x> <y> <z>."
+
+command:
+  help: |-
+    <#d97a4a><bold>CopperWorks</bold></#d97a4a> <gray>— профессии для медных големов</gray>
+    <gray>Нанять голема: <white>Shift + ПКМ</white> пустой рукой по медному голему рядом с медным сундуком.</gray>
+    <white>/cw list</white> <gray>— сколько у тебя рабочих</gray>
+    <white>/cw reload</white> <gray>— перезагрузить конфиг (админ)</gray>
+  list: "Рабочих големов: <yellow><count></yellow><gray>/<max></gray>"
+  list-unlimited: "без лимита"
+  reloaded: "<green>Конфиг и сообщения перезагружены."
+
+job:
+  sorter:
+    name: "Сортировщик"
+    desc: "Раскладывает вещи из медного сундука по сундукам вокруг. Фильтр: рамка с предметом на сундуке."
+  courier:
+    name: "Курьер"
+    desc: "Возит вещи из медного сундука в выбранный контейнер на любом расстоянии."
+  farmer:
+    name: "Фермер"
+    desc: "Собирает созревший урожай вокруг, пересаживает и складывает в медный сундук."
+
+upgrade-name:
+  speed: "Скорость"
+  capacity: "Вместимость"
+  range: "Дальность"
+
+values:
+  speed: "×<value>"
+  sorter-capacity: "<value> предм. за раз"
+  courier-capacity: "<value> ст. за рейс"
+  farmer-capacity: "<value> раст. за раз"
+  radius: "радиус <value> бл."
+  distance: "до <value> бл."
+  unlimited: "без ограничений"
+
+oxidation:
+  unaffected: "блестящая"
+  exposed: "потемневшая"
+  weathered: "выветренная"
+  oxidized: "окисленная"
+  waxed: " <gray>(под воском)</gray>"
+
+status:
+  starting: "<gray>Осматривается…"
+  working: "<green>Работает"
+  idle: "<gray>Ждёт предметы в медном сундуке"
+  nothing-to-sort: "<yellow>Некуда разложить. Добавь рамки-фильтры или сундуки рядом"
+  nothing-ripe: "<gray>Ждёт, пока созреет урожай"
+  storage-full: "<red>Медный сундук заполнен"
+  no-post: "<red>Рядом нет медного сундука"
+  no-target: "<yellow>Не указана точка доставки"
+  too-far: "<red>Точка доставки слишком далеко"
+  other-world: "<red>Точка доставки в другом мире"
+  waiting-cargo: "<gray>Ждёт груз в медном сундуке"
+  on-trip: "<aqua>Везёт груз, осталось <time>"
+  returning: "<aqua>Возвращается, осталось <time>"
+  disabled: "<red>Профессия отключена на сервере"
+
+dialog:
+  close: "Закрыть"
+  back: "Назад"
+  hire:
+    title: "Медный голем"
+    body: "Этот голем свободен. Выбери ему профессию: он будет работать у ближайшего медного сундука."
+  manage:
+    title: "<job> · CopperWorks"
+    info: |-
+      <gray>Владелец:</gray> <owner>
+      <gray>Сейчас:</gray> <status>
+      <gray>Медь:</gray> <oxidation> <gray>· скорость работы</gray> <speed>%
+      <gray>Улучшения:</gray> скорость <lvl_speed>/3 · вместимость <lvl_capacity>/3 · дальность <lvl_range>/3
+      <gray>Всего перенесено:</gray> <moved> предм.
+    sorter-info: "<gray>Сундуков в радиусе <radius> бл.:</gray> <targets> <gray>· из них с фильтрами:</gray> <filtered>"
+    courier-info: "<gray>Доставка:</gray> <target> <gray>· за рейс:</gray> <stacks> ст."
+    courier-no-target: "<yellow>не указана</yellow>"
+    farmer-info: "<gray>Растений в радиусе <radius> бл.:</gray> <crops>"
+    upgrade-button: "<upgrade> <level> → <next>"
+    upgrade-button-max: "<upgrade>: максимум"
+    upgrade-tooltip: |-
+      Цена: <cost> × <item>
+      Сейчас: <current>
+      Будет: <future>
+    upgrade-tooltip-max: "Сейчас: <current>"
+    change-job: "Сменить профессию"
+    set-target: "Точка доставки"
+    set-target-tooltip: "Нажми, затем кликни ПКМ по сундуку, бочке или шалкеру."
+    fire: "Уволить"
+    tip: "<dark_gray>Окисленный голем работает медленнее. Ось снимает окисление, соты его останавливают."
+  change-job:
+    title: "Новая профессия"
+  fire:
+    title: "Уволить голема?"
+    body: "Голем перестанет работать и снова станет обычным медным големом."
+    confirm: "Уволить"
+    cancel: "Отмена"
