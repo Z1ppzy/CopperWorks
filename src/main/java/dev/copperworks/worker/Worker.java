@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -181,7 +182,67 @@ public final class Worker {
         pdc.set(Keys.MOVED, PersistentDataType.LONG, moved() + amount);
     }
 
-    /** Сбрасывает только данные рейса (при смене профессии). */
+    /** Уровень опыта, начиная с 1. Ограничение сверху (max-level) применяет Progression. */
+    public int xpLevel() {
+        return Math.max(1, pdc.getOrDefault(Keys.XP_LEVEL, PersistentDataType.INTEGER, 1));
+    }
+
+    public void xpLevel(int level) {
+        pdc.set(Keys.XP_LEVEL, PersistentDataType.INTEGER, Math.max(1, level));
+    }
+
+    /** Опыт, набранный внутри текущего уровня. */
+    public double xp() {
+        double xp = pdc.getOrDefault(Keys.XP, PersistentDataType.DOUBLE, 0.0);
+        return Double.isFinite(xp) && xp > 0 ? xp : 0;
+    }
+
+    public void xp(double xp) {
+        pdc.set(Keys.XP, PersistentDataType.DOUBLE, Double.isFinite(xp) ? Math.max(0, xp) : 0);
+    }
+
+    /** Начало текущего часа для лимита опыта (0 — опыт ещё не начислялся). */
+    public long xpWindowStart() {
+        return pdc.getOrDefault(Keys.XP_WINDOW, PersistentDataType.LONG, 0L);
+    }
+
+    /** Опыт, набранный в текущем часе. */
+    public double xpWindowAmount() {
+        double amount = pdc.getOrDefault(Keys.XP_WINDOW_AMOUNT, PersistentDataType.DOUBLE, 0.0);
+        return Double.isFinite(amount) && amount > 0 ? amount : 0;
+    }
+
+    public void xpWindow(long start, double amount) {
+        pdc.set(Keys.XP_WINDOW, PersistentDataType.LONG, start);
+        pdc.set(Keys.XP_WINDOW_AMOUNT, PersistentDataType.DOUBLE, Double.isFinite(amount) ? Math.max(0, amount) : 0);
+    }
+
+    /** Черты в порядке получения. Неизвестные id (например, из будущей версии) пропускаются. */
+    public List<Trait> traits() {
+        String raw = pdc.get(Keys.TRAITS, PersistentDataType.STRING);
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        List<Trait> traits = new ArrayList<>(3);
+        for (String id : raw.split(",")) {
+            Trait trait = Trait.byId(id.trim());
+            if (trait != null && !traits.contains(trait)) {
+                traits.add(trait);
+            }
+        }
+        return List.copyOf(traits);
+    }
+
+    public void traits(List<Trait> traits) {
+        String raw = traits.stream().distinct().map(Trait::id).collect(Collectors.joining(","));
+        if (raw.isEmpty()) {
+            pdc.remove(Keys.TRAITS);
+        } else {
+            pdc.set(Keys.TRAITS, PersistentDataType.STRING, raw);
+        }
+    }
+
+    /** Сбрасывает только данные рейса (при смене профессии). Опыт, уровень и черты остаются. */
     public void clearTrip() {
         pdc.remove(Keys.PHASE);
         pdc.remove(Keys.PHASE_UNTIL);
@@ -198,5 +259,10 @@ public final class Worker {
         pdc.remove(Keys.TARGET);
         pdc.remove(Keys.LEVELS);
         pdc.remove(Keys.MOVED);
+        pdc.remove(Keys.XP);
+        pdc.remove(Keys.XP_LEVEL);
+        pdc.remove(Keys.TRAITS);
+        pdc.remove(Keys.XP_WINDOW);
+        pdc.remove(Keys.XP_WINDOW_AMOUNT);
     }
 }

@@ -3,7 +3,7 @@ package dev.copperworks.worker;
 import dev.copperworks.CopperWorksPlugin;
 import dev.copperworks.config.Settings;
 import dev.copperworks.job.JobHandler;
-import java.util.logging.Level;
+import dev.copperworks.util.Log;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.CopperGolem;
 
@@ -27,6 +27,7 @@ public final class WorkerTicker implements Runnable {
                 registry.untrack(golem);
                 continue;
             }
+            plugin.progression().flushEffects(golem, state);
             if (state.busy || tick < state.nextActionTick) {
                 continue;
             }
@@ -51,7 +52,10 @@ public final class WorkerTicker implements Runnable {
             try {
                 delay = handler.work(worker, state, tick);
             } catch (RuntimeException e) {
-                plugin.getLogger().log(Level.WARNING, "Ошибка в работе голема " + golem.getUniqueId(), e);
+                Log.warn("ticker", "Ошибка в работе голема " + golem.getUniqueId() + " job=" + job.id()
+                    + " at=" + golem.getWorld().getName() + " " + golem.getLocation().getBlockX() + " "
+                    + golem.getLocation().getBlockY() + " " + golem.getLocation().getBlockZ()
+                    + ", следующая попытка через 200 тиков", e);
                 delay = 200;
             }
             state.nextActionTick = tick + Math.max(1, delay);

@@ -13,6 +13,7 @@ public enum Status {
     TOO_FAR("too-far"),
     OTHER_WORLD("other-world"),
     WAITING_CARGO("waiting-cargo"),
+    NOTHING_TO_SEND("nothing-to-send"),
     ON_TRIP("on-trip"),
     RETURNING("returning"),
     DISABLED("disabled");

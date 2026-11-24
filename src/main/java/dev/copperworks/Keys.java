@@ -15,6 +15,16 @@ public final class Keys {
     public static NamespacedKey LEG_MILLIS;
     public static NamespacedKey CARGO;
     public static NamespacedKey MOVED;
+    /** Опыт внутри текущего уровня (double). */
+    public static NamespacedKey XP;
+    /** Уровень голема, 1..experience.max-level. */
+    public static NamespacedKey XP_LEVEL;
+    /** Черты характера: id через запятую в порядке получения. */
+    public static NamespacedKey TRAITS;
+    /** Начало текущего часа для лимита опыта (System.currentTimeMillis). */
+    public static NamespacedKey XP_WINDOW;
+    /** Сколько опыта набрано в текущем часе. */
+    public static NamespacedKey XP_WINDOW_AMOUNT;
 
     private Keys() {
     }
@@ -30,5 +40,10 @@ public final class Keys {
         LEG_MILLIS = new NamespacedKey(plugin, "leg_millis");
         CARGO = new NamespacedKey(plugin, "cargo");
         MOVED = new NamespacedKey(plugin, "moved");
+        XP = new NamespacedKey(plugin, "xp");
+        XP_LEVEL = new NamespacedKey(plugin, "xp_level");
+        TRAITS = new NamespacedKey(plugin, "traits");
+        XP_WINDOW = new NamespacedKey(plugin, "xp_window");
+        XP_WINDOW_AMOUNT = new NamespacedKey(plugin, "xp_window_amount");
     }
 }

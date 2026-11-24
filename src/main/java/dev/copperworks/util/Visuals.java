@@ -118,6 +118,30 @@ public final class Visuals {
         location.getWorld().playSound(location, Sound.ENTITY_COPPER_GOLEM_ITEM_DROP, SoundCategory.BLOCKS, 0.7f, 0.9f);
     }
 
+    /** Голем повысил уровень; newTrait — заодно получил черту характера. */
+    public void levelUp(CopperGolem golem, boolean newTrait) {
+        if (!enabled.getAsBoolean() || !golem.isValid()) {
+            return;
+        }
+        World world = golem.getWorld();
+        Location at = golem.getLocation().add(0, 0.9, 0);
+        world.spawnParticle(Particle.TOTEM_OF_UNDYING, at, 24, 0.3, 0.5, 0.3, 0.3);
+        world.spawnParticle(Particle.WAX_ON, at, 12, 0.4, 0.5, 0.4, 0);
+        world.playSound(golem, Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.NEUTRAL, 0.6f, 1.3f);
+        if (!newTrait) {
+            return;
+        }
+        later(8, () -> {
+            if (!golem.isValid()) {
+                return;
+            }
+            Location top = golem.getLocation().add(0, 1.4, 0);
+            golem.getWorld().spawnParticle(Particle.ENCHANT, top, 40, 0.5, 0.6, 0.5, 0.8);
+            golem.getWorld().spawnParticle(Particle.END_ROD, top, 8, 0.3, 0.4, 0.3, 0.02);
+            golem.getWorld().playSound(golem, Sound.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.NEUTRAL, 1.0f, 1.2f);
+        });
+    }
+
     public void fly(ItemStack item, Location from, Location to) {
         World world = from.getWorld();
         if (world == null || !world.equals(to.getWorld()) || item.isEmpty()) {

@@ -3,19 +3,25 @@ package dev.copperworks.job;
 import dev.copperworks.config.Messages;
 import dev.copperworks.config.Settings;
 import dev.copperworks.util.Containers;
+import dev.copperworks.util.Log;
 import dev.copperworks.util.Visuals;
 import dev.copperworks.worker.Phase;
+import dev.copperworks.worker.Progression;
 import dev.copperworks.worker.RuntimeState;
 import dev.copperworks.worker.Status;
+import dev.copperworks.worker.Traits;
 import dev.copperworks.worker.Upgrade;
 import dev.copperworks.worker.Worker;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.CopperGolem;
@@ -36,12 +42,15 @@ public final class CourierJob implements JobHandler {
     private final Supplier<Settings> settings;
     private final Messages messages;
     private final Visuals visuals;
+    private final Progression progression;
 
-    public CourierJob(Plugin plugin, Supplier<Settings> settings, Messages messages, Visuals visuals) {
+    public CourierJob(Plugin plugin, Supplier<Settings> settings, Messages messages, Visuals visuals,
+                      Progression progression) {
         this.plugin = plugin;
         this.settings = settings;
         this.messages = messages;
         this.visuals = visuals;
+        this.progression = progression;
     }
 
     @Override
@@ -63,7 +72,7 @@ public final class CourierJob implements JobHandler {
                 state.status = Status.RETURNING;
                 if (System.currentTimeMillis() >= worker.phaseUntil()) {
                     finishTrip(worker, state, s);
-                    yield s.scaledInterval(40, s.speedFactor(worker));
+                    yield Traits.interval(s, worker, 40);
                 }
                 yield CHECK_TICKS;
             }
@@ -93,18 +102,32 @@ public final class CourierJob implements JobHandler {
             return 100;
         }
 
-        List<ItemStack> cargo = takeStacks(input, s.courierStacks[worker.level(Upgrade.CAPACITY)]);
+        int maxStacks = Traits.courierStacks(s, worker);
+        // Рамки на медном сундуке курьера: возить только то, что в них (с группами, как у сортировщика).
+        Set<Material> filter = s.courierFrameFilter ? Frames.on(post) : Set.of();
+        List<ItemStack> cargo = takeStacks(input, maxStacks,
+            item -> filter.isEmpty() || SortTarget.accepts(filter, item.getType(), s.sorterGroups));
         if (cargo.isEmpty()) {
-            state.status = Status.WAITING_CARGO;
+            boolean filtered = !filter.isEmpty() && !input.isEmpty();
+            if (filtered && state.status != Status.NOTHING_TO_SEND) {
+                Log.debug("courier", () -> "golem=" + Log.id(worker.golem()) + " в медном сундуке нет вещей под рамки "
+                    + filter + ", ждёт");
+            }
+            state.status = filtered ? Status.NOTHING_TO_SEND : Status.WAITING_CARGO;
             return 40;
         }
-        double blocksPerSecond = s.courierBlocksPerSecond * s.speedFactor(worker);
-        long leg = Math.max(s.courierMinLegSeconds * 1000L, (long) (distance / blocksPerSecond * 1000));
+        double blocksPerSecond = s.courierBlocksPerSecond * Traits.speedFactor(s, worker);
+        long baseLeg = Math.max(s.courierMinLegSeconds * 1000L, (long) (distance / blocksPerSecond * 1000));
+        long leg = Traits.tripLegMillis(s, worker, baseLeg);
         worker.cargo(cargo);
         worker.legMillis(leg);
         worker.phaseUntil(System.currentTimeMillis() + leg);
         worker.phase(Phase.OUTBOUND);
         state.status = Status.ON_TRIP;
+        Log.debug("courier", () -> "golem=" + Log.id(worker.golem()) + " ушёл в рейс: стаков " + cargo.size() + "/" + maxStacks
+            + ", предметов " + Containers.total(cargo) + ", дистанция " + Math.round(distance) + " бл., плечо "
+            + leg + " мс" + (leg != baseLeg ? " (без черт " + baseLeg + " мс)" : "")
+            + (filter.isEmpty() ? "" : ", фильтр рамок " + filter));
 
         CopperGolem golem = worker.golem();
         visuals.depart(golem, post);
@@ -130,17 +153,30 @@ public final class CourierJob implements JobHandler {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 state.busy = false;
                 if (!golem.isValid()) {
+                    Log.debug("courier", () -> "golem=" + Log.id(golem) + " выгрузился во время загрузки чанка доставки,"
+                        + " доставим, когда снова загрузится");
                     return; // голем выгрузился — продолжим, когда чанк снова загрузится
                 }
                 Worker fresh = new Worker(golem);
                 if (fresh.phase() != Phase.OUTBOUND) {
+                    Log.debug("courier", () -> "golem=" + Log.id(golem) + " уже не в фазе OUTBOUND (" + fresh.phase()
+                        + "), доставку пропускаю");
                     return;
+                }
+                if (error != null) {
+                    Log.warn("courier", "golem=" + Log.id(golem) + " не удалось загрузить чанк точки доставки "
+                        + target.getWorld().getName() + " " + target.getBlockX() + " " + target.getBlockY() + " "
+                        + target.getBlockZ() + ", везёт груз обратно", error);
                 }
                 List<ItemStack> cargo = fresh.cargo();
                 Block targetBlock = target.getBlock();
                 Inventory output = error == null && Containers.isStorage(targetBlock.getType())
                     ? Containers.inventory(targetBlock) : null;
                 if (output == null) {
+                    Log.info("courier", "golem=" + Log.id(golem) + " owner=" + Log.id(fresh.owner())
+                        + " не нашёл контейнер в " + target.getBlockX() + " " + target.getBlockY() + " "
+                        + target.getBlockZ() + " (блок " + targetBlock.getType() + "), везёт "
+                        + Containers.total(cargo) + " предм. обратно");
                     turnBack(fresh, cargo, 0);
                     notifyOwner(fresh, "courier.no-target", target, 0, 0);
                     return;
@@ -154,6 +190,12 @@ public final class CourierJob implements JobHandler {
                 } else {
                     notifyOwner(fresh, "courier.partial", target, delivered, Containers.total(rest));
                 }
+                // Курьер стоит у своего сундука (невидимый), так что это и есть дистанция рейса.
+                double distance = golem.getWorld().equals(world) ? golem.getLocation().distance(target) : 0;
+                Log.debug("courier", () -> "golem=" + Log.id(golem) + " доставил " + delivered + " предм. в "
+                    + target.getBlockX() + " " + target.getBlockY() + " " + target.getBlockZ()
+                    + ", не влезло " + Containers.total(rest) + ", дистанция " + Math.round(distance) + " бл.");
+                progression.delivered(fresh, delivered, distance);
             }));
     }
 
@@ -198,12 +240,12 @@ public final class CourierJob implements JobHandler {
         golem.setCollidable(!away);
     }
 
-    private static List<ItemStack> takeStacks(Inventory inventory, int maxStacks) {
+    private static List<ItemStack> takeStacks(Inventory inventory, int maxStacks, Predicate<ItemStack> accept) {
         List<ItemStack> taken = new ArrayList<>();
         ItemStack[] contents = inventory.getStorageContents();
         for (int slot = 0; slot < contents.length && taken.size() < maxStacks; slot++) {
             ItemStack item = contents[slot];
-            if (item == null || item.isEmpty()) {
+            if (item == null || item.isEmpty() || !accept.test(item)) {
                 continue;
             }
             taken.add(item.clone());

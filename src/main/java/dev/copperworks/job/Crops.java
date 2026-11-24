@@ -126,6 +126,25 @@ public final class Crops {
         return null;
     }
 
+    /**
+     * Бонусный предмет черты «Жадный»: одна штука основного урожая (пшеница, а не семена).
+     *
+     * @param crop тип блока до сбора
+     * @return копия в одну штуку или null, если дропа нет
+     */
+    public static @Nullable ItemStack bonusDrop(Material crop, List<ItemStack> drops) {
+        if (drops.isEmpty()) {
+            return null;
+        }
+        Material seed = REPLANT.get(crop);
+        for (ItemStack drop : drops) {
+            if (drop.getType() != seed) {
+                return drop.asOne();
+            }
+        }
+        return drops.getFirst().asOne();
+    }
+
     private static boolean grownFromStem(Block fruit) {
         for (BlockFace side : SIDES) {
             Block neighbour = fruit.getRelative(side);

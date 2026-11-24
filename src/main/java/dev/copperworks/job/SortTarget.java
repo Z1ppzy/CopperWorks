@@ -19,6 +19,11 @@ public record SortTarget(BlockKey anchor, Location center, Set<Material> filters
     }
 
     public boolean accepts(Material type, List<Tag<Material>> groups) {
+        return accepts(filters, type, groups);
+    }
+
+    /** Рамки принимают предмет: точное совпадение или общая группа (рамка с дубовым бревном — все брёвна). */
+    public static boolean accepts(Set<Material> filters, Material type, List<Tag<Material>> groups) {
         if (filters.contains(type)) {
             return true;
         }

@@ -43,15 +43,57 @@ courier:
 
 death: "<red>Твой голем (<job>) погиб на <x> <y> <z>."
 
+progress:
+  level-up: "<green>Твой голем (<job>) достиг уровня <yellow><level></yellow>!"
+  level-max: "<gold>Твой голем (<job>) достиг максимального уровня <level>!"
+  trait-gained: "<gold>Новая черта: <yellow><trait></yellow></gold> <gray>— <desc>"
+
+reroll:
+  disabled: "<red>Переобучение отключено на сервере."
+  changed: "<red>Черты голема уже изменились. Открой меню заново."
+  no-options: "<yellow>Нет черт, на которые можно заменить «<trait>»."
+  success: "<green>Голем забыл черту «<old>» и получил новую: <yellow><new></yellow> <gray>— <desc>"
+
+trait:
+  swift:
+    name: "Быстроногий"
+    desc: "Курьер: время рейса −<percent>%."
+  porter:
+    name: "Грузчик"
+    desc: "Курьер: +<stacks> ст. за рейс. Сортировщик: +<percent>% предметов за перенос."
+  tidy:
+    name: "Аккуратный"
+    desc: "Сортировщик: пересканирует сундуки в <times> раза чаще и сначала раскладывает вещи по сундукам с фильтрами."
+  greedy:
+    name: "Жадный"
+    desc: "Фермер: шанс <chance>% получить с растения ещё один предмет урожая."
+  tireless:
+    name: "Неутомимый"
+    desc: "Пауза между действиями короче на <percent>% в любой профессии."
+  stainless:
+    name: "Нержавейка"
+    desc: "Окисление замедляет работу на <percent>% меньше."
+  farsighted:
+    name: "Дальнозоркий"
+    desc: "Сортировщик и фермер: +<blocks> бл. к радиусу."
+  lazy:
+    name: "Ленивый, но надёжный"
+    desc: "Работает на <percent>% медленнее, но вместимость как у улучшения на <levels> ур. выше."
+
 command:
   help: |-
     <#d97a4a><bold>CopperWorks</bold></#d97a4a> <gray>— профессии для медных големов</gray>
     <gray>Нанять голема: <white>Shift + ПКМ</white> пустой рукой по медному голему рядом с медным сундуком.</gray>
     <white>/cw list</white> <gray>— сколько у тебя рабочих</gray>
     <white>/cw reload</white> <gray>— перезагрузить конфиг (админ)</gray>
+    <white>/cw xp \<количество></white> <gray>— дать опыт голему, на которого смотришь (админ)</gray>
   list: "Рабочих големов: <yellow><count></yellow><gray>/<max></gray>"
   list-unlimited: "без лимита"
   reloaded: "<green>Конфиг и сообщения перезагружены."
+  xp-no-golem: "<red>Посмотри на нанятого голема (не дальше 8 блоков)."
+  xp-disabled: "<red>Опыт отключён: experience.enabled в config.yml."
+  xp-given: "<green>Голему засчитано <amount> опыта: уровень <yellow><level></yellow>, опыт <xp>/<need>."
+  xp-max: "<gold>Голем на максимальном уровне <level>."
 
 job:
   sorter:
@@ -59,7 +101,7 @@ job:
     desc: "Раскладывает вещи из медного сундука по сундукам вокруг. Фильтр: рамка с предметом на сундуке."
   courier:
     name: "Курьер"
-    desc: "Возит вещи из медного сундука в выбранный контейнер на любом расстоянии."
+    desc: "Возит вещи из медного сундука в выбранный контейнер на любом расстоянии. Рамки с предметами на медном сундуке ограничивают, что возить."
   farmer:
     name: "Фермер"
     desc: "Собирает созревший урожай вокруг, пересаживает и складывает в медный сундук."
@@ -97,6 +139,7 @@ status:
   too-far: "<red>Точка доставки слишком далеко"
   other-world: "<red>Точка доставки в другом мире"
   waiting-cargo: "<gray>Ждёт груз в медном сундуке"
+  nothing-to-send: "<yellow>В медном сундуке нет вещей под рамки-фильтры"
   on-trip: "<aqua>Везёт груз, осталось <time>"
   returning: "<aqua>Возвращается, осталось <time>"
   disabled: "<red>Профессия отключена на сервере"
@@ -116,9 +159,24 @@ dialog:
       <gray>Улучшения:</gray> скорость <lvl_speed>/3 · вместимость <lvl_capacity>/3 · дальность <lvl_range>/3
       <gray>Всего перенесено:</gray> <moved> предм.
     sorter-info: "<gray>Сундуков в радиусе <radius> бл.:</gray> <targets> <gray>· из них с фильтрами:</gray> <filtered>"
-    courier-info: "<gray>Доставка:</gray> <target> <gray>· за рейс:</gray> <stacks> ст."
+    courier-info: "<gray>Доставка:</gray> <target> <gray>· за рейс:</gray> <stacks> ст. <gray>· возит:</gray> <filter>"
+    courier-filter-all: "все вещи"
+    courier-filter-frames: "только из рамок (<count>)"
     courier-no-target: "<yellow>не указана</yellow>"
     farmer-info: "<gray>Растений в радиусе <radius> бл.:</gray> <crops>"
+    experience: "<gray>Уровень:</gray> <yellow><level></yellow><gray>/<max></gray>  <bar>  <gray><xp>/<need> опыта</gray>"
+    experience-max: "<gray>Уровень:</gray> <gold><level>/<max> — максимум</gold>"
+    xp-capped: "<dark_gray>Лимит опыта на этот час набран, опыт снова пойдёт через <time>.</dark_gray>"
+    xp-bar: "<#d97a4a><filled></#d97a4a><dark_gray><empty></dark_gray>"
+    # Символы полосы опыта: заполненный и пустой сегмент (без тегов MiniMessage).
+    xp-bar-filled: "▮"
+    xp-bar-empty: "▯"
+    traits-title: "<gray>Черты характера:</gray>"
+    traits-empty: "<dark_gray>пока нет</dark_gray>"
+    trait-line: "<yellow>• <trait></yellow> <gray>— <desc></gray>"
+    trait-line-inactive: "<dark_gray>• <trait> — <desc> (не действует в этой профессии)</dark_gray>"
+    trait-line-disabled: "<dark_gray><st>• <trait></st> — <desc> (черта отключена на сервере)</dark_gray>"
+    trait-next: "<dark_gray>Следующая черта — на <level> уровне.</dark_gray>"
     upgrade-button: "<upgrade> <level> → <next>"
     upgrade-button-max: "<upgrade>: максимум"
     upgrade-tooltip: |-
@@ -130,11 +188,23 @@ dialog:
     set-target: "Точка доставки"
     set-target-tooltip: "Нажми, затем кликни ПКМ по сундуку, бочке или шалкеру."
     fire: "Уволить"
+    reroll: "Переобучение"
+    reroll-tooltip: |-
+      Голем забудет одну черту и получит случайную новую.
+      Цена: <cost> × <item>
     tip: "<dark_gray>Окисленный голем работает медленнее. Ось снимает окисление, соты его останавливают."
   change-job:
     title: "Новая профессия"
   fire:
     title: "Уволить голема?"
-    body: "Голем перестанет работать и снова станет обычным медным големом."
+    body: "Голем перестанет работать и снова станет обычным медным големом. Уровень, опыт и черты пропадут."
     confirm: "Уволить"
+    cancel: "Отмена"
+  reroll:
+    title: "Переобучение"
+    body: "Какую черту голем забудет? Взамен выпадет случайная новая: без повторов и несовместимых пар. Цена: <cost> × <item>."
+  reroll-confirm:
+    title: "Переобучить голема?"
+    body: "Голем забудет черту «<trait>» и получит случайную новую. Цена: <cost> × <item>."
+    confirm: "Переобучить"
     cancel: "Отмена"

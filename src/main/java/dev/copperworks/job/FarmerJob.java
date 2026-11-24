@@ -2,14 +2,17 @@ package dev.copperworks.job;
 
 import dev.copperworks.config.Settings;
 import dev.copperworks.util.Containers;
+import dev.copperworks.util.Log;
 import dev.copperworks.util.Visuals;
 import dev.copperworks.worker.BlockKey;
+import dev.copperworks.worker.Progression;
 import dev.copperworks.worker.RuntimeState;
 import dev.copperworks.worker.Status;
-import dev.copperworks.worker.Upgrade;
+import dev.copperworks.worker.Traits;
 import dev.copperworks.worker.Worker;
 import java.util.List;
 import java.util.function.Supplier;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.CopperGolem;
@@ -22,10 +25,12 @@ public final class FarmerJob implements JobHandler {
 
     private final Supplier<Settings> settings;
     private final Visuals visuals;
+    private final Progression progression;
 
-    public FarmerJob(Supplier<Settings> settings, Visuals visuals) {
+    public FarmerJob(Supplier<Settings> settings, Visuals visuals, Progression progression) {
         this.settings = settings;
         this.visuals = visuals;
+        this.progression = progression;
     }
 
     @Override
@@ -43,7 +48,7 @@ public final class FarmerJob implements JobHandler {
             return 60;
         }
 
-        int radius = s.farmerRadius[worker.level(Upgrade.RANGE)];
+        int radius = Traits.farmerRadius(s, worker);
         Block center = golem.getLocation().getBlock();
         BlockKey centerKey = BlockKey.of(center);
         if (state.cropsDirty || tick - state.cropsScannedTick > RESCAN_TICKS
@@ -53,10 +58,12 @@ public final class FarmerJob implements JobHandler {
             state.cropsScannedTick = tick;
             state.cropsRadius = radius;
             state.cropsCenter = centerKey;
+            Log.debug("farmer", () -> "golem=" + Log.id(golem) + " пересканировал поле: center=" + centerKey
+                + " radius=" + radius + " растений=" + state.crops.size());
         }
 
-        int interval = s.scaledInterval(s.farmerBaseInterval, s.speedFactor(worker));
-        int limit = s.farmerCropsPerAction[worker.level(Upgrade.CAPACITY)];
+        int interval = Traits.interval(s, worker, s.farmerBaseInterval);
+        int limit = Traits.farmerCropsPerAction(s, worker);
         World world = golem.getWorld();
         int harvested = 0;
         Block shownBlock = null;
@@ -69,9 +76,18 @@ public final class FarmerJob implements JobHandler {
                 continue;
             }
             Block block = key.block(world);
+            Material crop = block.getType();
             List<ItemStack> drops = Crops.harvest(golem, block);
             if (drops == null) {
                 continue;
+            }
+            if (Traits.rollExtraDrop(s, worker)) {
+                ItemStack bonus = Crops.bonusDrop(crop, drops);
+                if (bonus != null) {
+                    drops.add(bonus);
+                    Log.debug("farmer", () -> "golem=" + Log.id(golem) + " «Жадный»: +1 " + bonus.getType().name()
+                        + " с " + crop.name() + " в " + key);
+                }
             }
             harvested++;
             worker.addMoved(Containers.total(drops));
@@ -88,6 +104,9 @@ public final class FarmerJob implements JobHandler {
             state.status = Status.NOTHING_RIPE;
             return Math.max(interval, 40);
         }
+        int harvestedFinal = harvested;
+        Log.debug("farmer", () -> "golem=" + Log.id(golem) + " собрал растений: " + harvestedFinal + "/" + limit);
+        progression.harvested(worker, harvested);
         state.status = Status.WORKING;
         if (shownItem != null) {
             visuals.harvest(golem, shownBlock, post, shownItem);
